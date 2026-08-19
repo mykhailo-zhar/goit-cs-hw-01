@@ -6,10 +6,18 @@ class ParsingError(Exception):
     pass
 
 
+class VisitError(Exception):
+    pass
+
+
 class TokenType:
     INTEGER = "INTEGER"
     PLUS = "PLUS"
     MINUS = "MINUS"
+    LPAREN = "LEFT_PARENTHESES"
+    RPAREN = "RIGHT_PARENTHESES"
+    MULT = "MULTIPLICATION"
+    DIV = "DIVISION"
     EOF = "EOF"  # Означає кінець вхідного рядка
 
 
@@ -59,15 +67,27 @@ class Lexer:
             if self.current_char.isdigit():
                 return Token(TokenType.INTEGER, self.integer())
 
-            if self.current_char == "+":
-                self.advance()
-                return Token(TokenType.PLUS, "+")
-
-            if self.current_char == "-":
-                self.advance()
-                return Token(TokenType.MINUS, "-")
-
-            raise LexicalError("Помилка лексичного аналізу")
+            match self.current_char:
+                case "+":
+                    self.advance()
+                    return Token(TokenType.PLUS, "+")
+                case "-":
+                    self.advance()
+                    return Token(TokenType.MINUS, "-")
+                case "*":
+                    self.advance()
+                    return Token(TokenType.MULT, "*")
+                case "/":
+                    self.advance()
+                    return Token(TokenType.DIV, "/")
+                case "(":
+                    self.advance()
+                    return Token(TokenType.LPAREN, "(")
+                case ")":
+                    self.advance()
+                    return Token(TokenType.RPAREN, ")")
+                case _:
+                    raise LexicalError("Помилка лексичного аналізу")
 
         return Token(TokenType.EOF, None)
 
@@ -81,6 +101,11 @@ class BinOp(AST):
         self.left = left
         self.op = op
         self.right = right
+
+
+class PriorityOp(AST):
+    def __init__(self, term):
+        self.term = term
 
 
 class Num(AST):
@@ -107,11 +132,42 @@ class Parser:
         else:
             self.error()
 
-    def term(self):
-        """Парсер для 'term' правил граматики. У нашому випадку - це цілі числа."""
+    def factor(self):
+        """
+        Парсер для 'factor' правил граматики. Це або число, або вираз в дужках
+
+        Returns:
+            AST: Вираз або число
+        """
         token = self.current_token
-        self.eat(TokenType.INTEGER)
-        return Num(token)
+        if token.type == TokenType.INTEGER:
+            self.eat(TokenType.INTEGER)
+            return Num(token)
+        self.eat(TokenType.LPAREN)
+        node = self.expr()
+        self.eat(TokenType.RPAREN)
+        return node
+
+    def term(self):
+        """
+        Парсер для 'term' правил граматики.
+        У нашому випадку - це продукти добутку чи ділення.
+
+        Returns:
+            AST: вираз, можливо, в дужках
+        """
+        node = self.factor()
+
+        while self.current_token.type in (TokenType.MULT, TokenType.DIV):
+            token = self.current_token
+            if token.type == TokenType.MULT:
+                self.eat(TokenType.MULT)
+            elif token.type == TokenType.DIV:
+                self.eat(TokenType.DIV)
+
+            node = BinOp(left=node, op=token, right=self.factor())
+
+        return node
 
     def expr(self):
         """Парсер для арифметичних виразів."""
@@ -149,10 +205,17 @@ class Interpreter:
         self.parser = parser
 
     def visit_BinOp(self, node):
-        if node.op.type == TokenType.PLUS:
-            return self.visit(node.left) + self.visit(node.right)
-        elif node.op.type == TokenType.MINUS:
-            return self.visit(node.left) - self.visit(node.right)
+        match node.op.type:
+            case TokenType.PLUS:
+                return self.visit(node.left) + self.visit(node.right)
+            case TokenType.MINUS:
+                return self.visit(node.left) - self.visit(node.right)
+            case TokenType.MULT:
+                return self.visit(node.left) * self.visit(node.right)
+            case TokenType.DIV:
+                return self.visit(node.left) / self.visit(node.right)
+            case _:
+                raise VisitError("Not valid operation")
 
     def visit_Num(self, node):
         return node.value
@@ -167,7 +230,7 @@ class Interpreter:
         return visitor(node)
 
     def generic_visit(self, node):
-        raise Exception(f"Немає методу visit_{type(node).__name__}")
+        raise VisitError(f"Немає методу visit_{type(node).__name__}")
 
 
 def main():
@@ -179,10 +242,15 @@ def main():
                 break
             lexer = Lexer(text)
             parser = Parser(lexer)
+
+            demo_parser = Parser(Lexer(text))
+            tree = demo_parser.expr()
+            print_ast(tree)
+
             interpreter = Interpreter(parser)
             result = interpreter.interpret()
             print(result)
-        except Exception as e:
+        except (VisitError, LexicalError, ParsingError) as e:
             print(e)
 
 
