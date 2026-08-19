@@ -1,13 +1,17 @@
 # Summary
 
-It is a template for GoIT python homework project with following tools:
+It is a homework # 1 for GoIT Computer Systems.
 
-- [mise](https://mise.jdx.dev/) for tool versions and overall configuration
-- [uv](https://docs.astral.sh/uv/) for dependencies and the virtual environment
-- [pytest](https://pytest.org/) for tests 
-- [ruff](https://docs.astral.sh/ruff/) for linting
-- [pre-commit](https://pre-commit.com/) for git hooks
-- [Sphinx](https://www.sphinx-doc.org/) for documentation.
+## 1. Assembly
+
+Assembled code: [calc.asm](src/calc.asm)
+Resulting DOS command: [calc.com](assets/calc.com)
+
+![Dosbox Screenshot](assets/dosbox.png)
+
+## 2. Interpreter
+
+See: [interpreter.py](src/interpreter.py)
 
 ## Prerequisites
 
@@ -27,15 +31,14 @@ Python is pinned via [mise.toml](mise.toml) (default **3.12**, overridable with 
   ```bash
    uv sync
   ```
-3. **Install pre-commit hooks** (once per clone, after `uv sync`):
+3. **Run interpreter script**:
   ```bash
-   mise run pre-commit-install
+  python src/interpreter.py
   ```
-4. **Add a new dependency** (updates `pyproject.toml` and `uv.lock`):
+  or
   ```bash
-   uv add <package>
+  python main.py
   ```
-   Or use the mise task (see `mise run install --help` for argument passing on your mise version).
 
 ## Layout
 
