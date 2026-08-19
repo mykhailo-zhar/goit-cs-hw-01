@@ -5,7 +5,7 @@ It is a homework # 1 for GoIT Computer Systems.
 ## 1. Assembly
 
 Assembled code: [calc.asm](src/calc.asm)
-Resulting command: [calc.com](assets/calc.com)
+Resulting DOS command: [calc.com](assets/calc.com)
 
 ![Dosbox Screenshot](assets/dosbox.png)
 
@@ -34,6 +34,10 @@ Python is pinned via [mise.toml](mise.toml) (default **3.12**, overridable with 
 3. **Run interpreter script**:
   ```bash
   python src/interpreter.py
+  ```
+  or
+  ```bash
+  python main.py
   ```
 
 ## Layout
